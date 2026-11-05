@@ -11,7 +11,7 @@ fail() { echo "tier1: gate-diff-improving: $*" >&2; exit 1; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 git init -q -b main "$T/r"; cd "$T/r"; git config user.email t@t; git config user.name t; git config core.hooksPath /dev/null
 mkdir -p scripts docs
-files="scripts/tier1.sh scripts/protected-paths.txt scripts/ran-gates.txt scripts/public-banned-hashes.txt scripts/AxiomGate.lean scripts/land-direct scripts/protected-set.sh"
+files="scripts/tier1.sh scripts/protected-paths.txt scripts/ran-gates.txt scripts/public-banned-hashes.txt scripts/AxiomGate.lean scripts/land-direct scripts/protected-set.sh lean-toolchain mise.toml lakefile.lean"
 for f in $files; do cp "$root/$f" "$f"; done
 echo unrelated > docs/other.md
 git add -A; git commit -qm base; base=$(git rev-parse HEAD)
@@ -35,6 +35,15 @@ unset GDI_APPROVED_FILE
 mut "tier1 mask added, approved"    fail "weakening"   eval 'sed -i "/^scripts\/lint-pipefail.sh/a exit 0" scripts/tier1.sh; echo "scripts/tier1.sh 0000" > "$T/approved"; export GDI_APPROVED_FILE=$T/approved'
 unset GDI_APPROVED_FILE
 mut "tier1 other file approved"     fail "removed/changed" eval 'sed -i "/^scripts\/lint-pipefail.sh/d" scripts/tier1.sh; echo "scripts/ran-gates.txt 0000" > "$T/approved"; export GDI_APPROVED_FILE=$T/approved'
+unset GDI_APPROVED_FILE
+mut "lakefile option changed"      fail "lakefile.lean"       eval 'sed -i "s/warningAsError, true/warningAsError, false/" lakefile.lean'
+mut "lakefile line added"          pass "only added lines"    eval 'echo "-- a comment" >> lakefile.lean'
+mut "toolchain bumped"             fail "removed/changed"     eval 'echo "leanprover/lean4:v4.99.0" > lean-toolchain'
+mut "mise pin bumped"              fail "mise.toml"           eval 'sed -i "s/4\.35\.0/4.99.0/" mise.toml'
+mut "mise.toml deleted"            fail "removed/changed"     git rm -q mise.toml
+mut "toolchain bump, approved"     pass "approved edit"       eval 'echo "leanprover/lean4:v4.99.0" > lean-toolchain; echo "lean-toolchain 0000" > "$T/approved"; export GDI_APPROVED_FILE=$T/approved'
+unset GDI_APPROVED_FILE
+mut "toolchain bump, other file approved" fail "removed/changed" eval 'echo "leanprover/lean4:v4.99.0" > lean-toolchain; echo "mise.toml 0000" > "$T/approved"; export GDI_APPROVED_FILE=$T/approved'
 unset GDI_APPROVED_FILE
 mut "tier1 line changed"        fail "removed/changed"        eval 'sed -i "s/^scripts\/lint-pipefail.sh/scripts\/lint-pipefail.sh x/" scripts/tier1.sh'
 mut "tier1 || true added"       fail "weakening"              eval 'sed -i "/^scripts\/lint-pipefail.sh/a scripts/test_new.sh || true" scripts/tier1.sh'
@@ -75,5 +84,8 @@ git reset -q --hard "$base"; echo '# x' >> scripts/AxiomGate.lean; echo x >> doc
 [ "$("$gate" --touched "$base" HEAD)" = scripts/AxiomGate.lean ] && ran_case || fail "--touched did not name exactly the gate-defining file"
 git reset -q --hard "$base"; echo x >> docs/other.md; git add -A; git commit -qm untouched
 [ -z "$("$gate" --touched "$base" HEAD)" ] && ran_case || fail "--touched named a file of an unrelated change"
+git reset -q --hard "$base"; echo "-- x" >> lakefile.lean; git add -A; git commit -qm lakefile
+[ "$("$gate" --touched "$base" HEAD)" = lakefile.lean ] && ran_case || fail "--touched did not name lakefile.lean"
+git reset -q --hard "$base"
 ran_done test_gate_diff_improving
 echo "gate-diff-improving: every worsening, mask, list or source change FAILS and every improvement passes: ok"

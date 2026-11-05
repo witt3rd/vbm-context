@@ -44,6 +44,7 @@ scripts/land/bin/land-check   # the vendored lander is the pinned copy (no local
 
 # 2. Build, zero warnings (scripts/check-zero-warning.sh: the warning's own diagnostic is required, a clean file must pass; prints `ran: zero-warning: 3 cases`).
 scripts/check-zero-warning.sh
+scripts/check-toolchain.sh   # lean-toolchain, mise.toml and lakefile.lean by what they DO: one Lean version, no dependency, every build target fails on a warning (prints `ran: toolchain: 9 cases`)
 lake build VbmContext VbmContextProofs vbm-context-vectors   # once, for the gates and every test (they build nothing more)
 
 # 2a. The axiom gate: every constant of ours depends only on propext, Classical.choice, Quot.sound (--selftest: a non-standard axiom is rejected).
@@ -59,6 +60,7 @@ par scripts/test_lint_public.sh
 # 2e. The ran-evidence mechanism: the shared negative test (a refused, missing, skipped, silent or zero-count check FAILS).
 par scripts/test_ran_evidence.sh
 # 2f. The gate-change machinery (the lander's hooks, scripts/land.d/): the protected set, the diff judge of a gate-file change, the relabel-attack suite that judges the proposed gates (each attack is refused; with its gate stubbed the suite FAILS).
+par scripts/test_check_toolchain.sh
 par scripts/test_protected_set.sh
 par scripts/test_gate_diff_improving.sh
 par scripts/test_relabel_attacks.sh

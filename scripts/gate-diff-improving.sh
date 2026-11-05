@@ -6,6 +6,7 @@
 #   NUMERIC BASELINES: every key moves only in its improving direction (table RULES below; an unknown key or field FAILS; a baseline that appears or disappears FAILS).
 #   scripts/tier1.sh:  may only GAIN lines: a removed or changed line FAILS, so does an added line that weakens (|| true, exit 0, set +e, if false, ...) or that joins
 #                      onto an existing line (a trailing backslash / && / || / |, or an added line that continues the one above).
+#   lean-toolchain, mise.toml, lakefile.lean: may only GAIN lines (a removed or changed line FAILS unless the lander consumed an exact-diff approval for it); what an added line does is judged by scripts/check-toolchain.sh.
 #   LISTS and GATE SOURCE: FAIL on ANY change (add, edit, delete): owner only.
 #   --suite-judged (what scripts/land runs): a LIST or GATE SOURCE change is not owner-only but judged by the RELABEL-ATTACK SUITE (scripts/relabel-attacks.sh, run by the lander on the
 #      proposed tree) instead; here it PASSes except scripts/protected-paths.txt, which must still protect everything the base list did
@@ -41,8 +42,9 @@ D = lambda *n: {k: "down" for k in n}
 RULES = {}   # no numeric baseline in this repository yet; the table and its checker stay (a baseline added later must name its rule here, or it FAILS as unknown)
 LISTS = ["scripts/protected-paths.txt", "scripts/public-banned-hashes.txt", "scripts/ran-gates.txt", "scripts/protected-set.sh", "scripts/gate-edit-approvals.txt"]
 SOURCE = ["scripts/AxiomGate.lean", "scripts/land-direct", "scripts/gate-diff-improving.sh", "scripts/relabel-attacks.sh", "scripts/lint-pipefail.sh", "scripts/lint-public",
-          "scripts/run-tests-parallel.sh", "scripts/land.conf", "scripts/lint-workflows.py", "scripts/git-hermetic.sh", "scripts/ran-evidence.sh", "scripts/lib-ran.sh", "scripts/check-zero-warning.sh",
+          "scripts/run-tests-parallel.sh", "scripts/land.conf", "scripts/lint-workflows.py", "scripts/git-hermetic.sh", "scripts/ran-evidence.sh", "scripts/lib-ran.sh", "scripts/check-zero-warning.sh", "scripts/check-toolchain.sh",
           ".github/visibility"]
+STRICT = ["lean-toolchain", "mise.toml", "lakefile.lean"]   # the toolchain pin and the build configuration: they may only GAIN lines; what an added line does is judged by scripts/check-toolchain.sh (Tier 1)
 SOURCE_DIRS = ["scripts/attacks/", "scripts/land/", "scripts/land.d/", ".github/workflows/"]   # the attack files, the pinned lander and its hooks are gate source too
 out, bad = [], 0
 def say(ok, f, why):
@@ -129,9 +131,14 @@ def tier1(p):
             if cont.search(added[-1]) or re.match(r"\s*(&&|\|\||\|)", added[0]): why.append(f"joins onto an existing line: +{added[-1] if cont.search(added[-1]) else added[0]}")
     say(not why, p, ("only added lines" if p not in APPROVED else "an approved edit (exact-diff approval consumed by this landing), added lines plain") if not why else "; ".join(why))
 
+def strict(p):
+    d = git("diff", "-U0", "--no-renames", mb, head, "--", p)
+    why = [f"removed/changed: {l}" for l in d.splitlines() if l.startswith("-") and not l.startswith("---")] if p not in APPROVED else []
+    say(not why, p, ("only added lines (their effect is judged by scripts/check-toolchain.sh)" if p not in APPROVED else "an approved edit (exact-diff approval consumed by this landing)") if not why else "; ".join(why))
+
 def is_source(p): return p in SOURCE or any(p.startswith(d) for d in SOURCE_DIRS)
 if TOUCHED:
-    print("\n".join(sorted(p for p in changed if p in RULES or p in LISTS or is_source(p) or p == "scripts/tier1.sh"))); sys.exit(0)
+    print("\n".join(sorted(p for p in changed if p in RULES or p in LISTS or p in STRICT or is_source(p) or p == "scripts/tier1.sh"))); sys.exit(0)
 
 def protected_superset(p):
     """The protected list may only grow: every entry of the base list is still covered (scripts/protected-set.sh --superset, this copy's own)."""
@@ -144,6 +151,7 @@ def protected_superset(p):
 for p in sorted(changed):
     if p in RULES: baseline(p)
     elif p == "scripts/tier1.sh": tier1(p)
+    elif p in STRICT: strict(p)
     elif SUITE and p == "scripts/protected-paths.txt": protected_superset(p)
     elif (p in LISTS or is_source(p)) and SUITE: say(True, p, "a list/gate source: judged by the relabel-attack suite (scripts/relabel-attacks.sh), not by the owner")
     elif p in LISTS or is_source(p): say(False, p, "a list/gate source: any change waits for the owner")

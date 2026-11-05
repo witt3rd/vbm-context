@@ -23,6 +23,8 @@ scripts/ran-evidence.sh
 scripts/lib-ran.sh
 scripts/ran-gates.txt
 scripts/check-zero-warning.sh
+scripts/check-toolchain.sh
+scripts/test_check_toolchain.sh
 scripts/test_ran_evidence.sh
 scripts/run-tests-parallel.sh
 scripts/protected-paths.txt
