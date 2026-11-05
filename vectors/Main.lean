@@ -23,10 +23,20 @@ def scenarios (c : Nat → State → State) : List (String × Bool) :=
     ("a step applies the patches, then compacts; the met obligation no longer protects its cited fact", t.1.obligations.map (·.met) == [true, true] && t.1.work == [4] && t.2 == 7 && !(t.1.facts.any (·.key == "y"))),
     ("a rewrite of a pinned key stays pinned, with the new text and source", t.1.facts == [fact "p" 9 true, fact "x" 0]) ]
 
+def pp : PrimaryPrompt := { version := 1, role := "crew", identity := "you build", contract := "finish with an outcome", dispositions := "edit early", variant := "may emit done" }
+
+/-- The primary prompt: a fixed rendering, a bump changes it, and every context of the prompt opens with it. -/
+def promptScenarios : List (String × Bool) :=
+  let p2 := { pp with version := 2 }
+  [ ("the primary prompt renders to its six segments, the version first",
+      pp.render == ["vbm-primary-prompt v1", "crew", "you build", "finish with an outcome", "edit early", "may emit done"]),
+    ("a version bump changes the rendering", pp.render != p2.render),
+    ("a context opens with the whole prompt, whatever follows", (context pp ["w"] ["s", "o"]).take 6 == pp.render && (context pp [] []).take 6 == pp.render) ]
+
 def mutant (n : Nat) (s : State) : State := { compact n s with obligations := [] }
 
 def main (args : List String) : IO UInt32 := do
-  let good := scenarios compact
+  let good := scenarios compact ++ promptScenarios
   let bad := (good.filter (!·.2)).length
   for (n, ok) in good do unless ok do IO.eprintln s!"differs: {n}"
   IO.println s!"vbm-context-vectors: {good.length} cases, {bad} differ"

@@ -22,6 +22,7 @@ The model never rewrites the state. It answers each step with an action and a li
 * **The pin rule.** A fact is protected when it is pinned, or when an obligation that is not yet met cites its key; compaction never drops a protected fact (`compact_protected`, `compact_cited`), and once the obligation is met the fact is an ordinary one again.
 * **One fact per key.** `addFact` and compaction keep the keys distinct (`apply_keysDistinct`, `compact_keysDistinct`).
 * **Compaction is idempotent** (`compact_idem`) and **bounded**: each list holds at most `n` items, plus the protected facts, which the caller chose to protect (`compact_size`).
+* **The primary prompt is byte-stable.** The first part of every agent's context is typed data, rendered by a pure function into six fixed segments with the version first; two different prompts never render alike (`render_injective`, so a version bump is a visible change), and the first six segments of every context of a prompt are exactly its rendering, whatever follows (`context_take`).
 * **The proofs are checked, not assumed:** no `sorry`, no added axiom (the axiom gate checks every constant), and every gate prints evidence that it ran at least one case.
 
 ## What it does not prove
