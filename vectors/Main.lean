@@ -53,10 +53,20 @@ def tailScenarios : List (String × Bool) :=
     ("the redaction hook runs on every slot text", (tailAt (tailSpec ["key"] 20 100) 0).pieces == ["key *123"]),
     ("the tail is a function of the view alone", tailAt (tailSpec ["budget"] 20 100) 5 == tailAt (tailSpec ["budget"] 20 100) 5 && (tailAt (tailSpec ["budget"] 20 100) 5).pieces != (tailAt (tailSpec ["budget"] 20 100) 6).pieces) ]
 
+/-- The request: history then tail; the next history never holds the previous tail; the layers share their prefix across calls. -/
+def requestScenarios : List (String × Bool) :=
+  let h := ["u", "r1", "o1"]
+  let cs : List Call := [⟨"r2", "o2", ["tail-a"]⟩, ⟨"r3", "o3", ["tail-b"]⟩]
+  [ ("a request is the history then the tail", request h ["t"] == ["u", "r1", "o1", "t"]),
+    ("the next history is the history, the reply and the observation, without the tail", advance h "r2" "o2" == ["u", "r1", "o1", "r2", "o2"]),
+    ("the history of a run never holds a tail segment", (historyOf h cs) == ["u", "r1", "o1", "r2", "o2", "r3", "o3"] && !((historyOf h cs).contains "tail-a")),
+    ("two full requests share prompt and workspace, whatever follows",
+      (fullRequest pp ["w"] ["s1"] "o" ["t1"]).take 7 == (fullRequest pp ["w"] ["s2", "s3"] "o'" []).take 7) ]
+
 def mutant (n : Nat) (s : State) : State := { compact n s with obligations := [] }
 
 def main (args : List String) : IO UInt32 := do
-  let good := scenarios compact ++ promptScenarios ++ tailScenarios
+  let good := scenarios compact ++ promptScenarios ++ tailScenarios ++ requestScenarios
   let bad := (good.filter (!·.2)).length
   for (n, ok) in good do unless ok do IO.eprintln s!"differs: {n}"
   IO.println s!"vbm-context-vectors: {good.length} cases, {bad} differ"
