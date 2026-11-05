@@ -51,12 +51,18 @@ bg axiom-gate lake env lean --run scripts/AxiomGate.lean --selftest
 # 2b. The conformance scenarios (vectors/Main.lean), and the check is shown able to fail: a compaction that drops the obligations is rejected.
 bg vectors-check lake exe vbm-context-vectors --check --selftest
 # 2c. The workflow files are valid and public-safe (scripts/lint-workflows.py: hosted runners only, no pull_request_target, no secret); its negative self-test is declared below.
+[ "$(cat .github/visibility)" = public ] || { echo "tier1: .github/visibility must say exactly public: this repository is public and never uses a self-hosted runner" >&2; exit 1; }
 python3 scripts/lint-workflows.py
 par scripts/test_lint_workflows.sh
 # 2d. The public-readiness lint: no private name, no path of ours, anywhere in the tree; it is shown able to fail.
 par scripts/test_lint_public.sh
 # 2e. The ran-evidence mechanism: the shared negative test (a refused, missing, skipped, silent or zero-count check FAILS).
 par scripts/test_ran_evidence.sh
+# 2f. The gate-change machinery (the lander's hooks, scripts/land.d/): the protected set, the diff judge of a gate-file change, the relabel-attack suite that judges the proposed gates (each attack is refused; with its gate stubbed the suite FAILS).
+par scripts/test_protected_set.sh
+par scripts/test_gate_diff_improving.sh
+par scripts/test_relabel_attacks.sh
+par scripts/test_run_parallel.sh
 
 for f in scripts/test_*.sh; do case " ${tests[*]} " in *" $f "*) ;; *) echo "tier1: $f is not declared with par" >&2; exit 1;; esac; done
 echo "tier1: ${#tests[@]} test scripts: ${tests[*]}"
