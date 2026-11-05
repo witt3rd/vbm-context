@@ -10,7 +10,7 @@ fail() { echo "tier1: protected-set: $*" >&2; exit 1; }
 # the owner's classes: each must be listed (dropping one from the list fails here)
 required="lean-toolchain mise.toml lakefile.lean AGENTS.md .github/workflows/ci.yml .github/visibility scripts/tier1.sh scripts/AxiomGate.lean scripts/lint-pipefail.sh scripts/lint-public scripts/public-banned-hashes.txt scripts/lint-workflows.py
 scripts/ran-evidence.sh scripts/lib-ran.sh scripts/ran-gates.txt scripts/check-zero-warning.sh scripts/run-tests-parallel.sh scripts/protected-paths.txt scripts/protected-set.sh scripts/land-direct scripts/land.conf scripts/land.d/post-rebase scripts/land/x
-scripts/gate-diff-improving.sh scripts/relabel-attacks.sh scripts/attacks/x scripts/test_protected_set.sh scripts/test_ran_evidence.sh"
+scripts/gate-diff-improving.sh scripts/relabel-attacks.sh scripts/attacks/x scripts/test_protected_set.sh scripts/test_ran_evidence.sh scripts/check-toolchain.sh scripts/lint-warning-options.sh scripts/test_lint_warning_options.sh"
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 entries=(); while IFS= read -r l; do l=${l%%#*}; l=${l//[[:space:]]/}; [ -n "$l" ] && entries+=("$l"); done < "$list"   # entries keep a leading "?" (may not exist yet)
 clean_entries=(); for e in "${entries[@]}"; do clean_entries+=("${e#\?}"); done

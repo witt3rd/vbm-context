@@ -42,7 +42,7 @@ D = lambda *n: {k: "down" for k in n}
 RULES = {}   # no numeric baseline in this repository yet; the table and its checker stay (a baseline added later must name its rule here, or it FAILS as unknown)
 LISTS = ["scripts/protected-paths.txt", "scripts/public-banned-hashes.txt", "scripts/ran-gates.txt", "scripts/protected-set.sh", "scripts/gate-edit-approvals.txt"]
 SOURCE = ["scripts/AxiomGate.lean", "scripts/land-direct", "scripts/gate-diff-improving.sh", "scripts/relabel-attacks.sh", "scripts/lint-pipefail.sh", "scripts/lint-public",
-          "scripts/run-tests-parallel.sh", "scripts/land.conf", "scripts/lint-workflows.py", "scripts/git-hermetic.sh", "scripts/ran-evidence.sh", "scripts/lib-ran.sh", "scripts/check-zero-warning.sh", "scripts/check-toolchain.sh",
+          "scripts/run-tests-parallel.sh", "scripts/land.conf", "scripts/lint-workflows.py", "scripts/git-hermetic.sh", "scripts/ran-evidence.sh", "scripts/lib-ran.sh", "scripts/check-zero-warning.sh", "scripts/check-toolchain.sh", "scripts/lint-warning-options.sh",
           ".github/visibility"]
 STRICT = ["lean-toolchain", "mise.toml", "lakefile.lean"]   # the toolchain pin and the build configuration: they may only GAIN lines; what an added line does is judged by scripts/check-toolchain.sh (Tier 1)
 SOURCE_DIRS = ["scripts/attacks/", "scripts/land/", "scripts/land.d/", ".github/workflows/"]   # the attack files, the pinned lander and its hooks are gate source too

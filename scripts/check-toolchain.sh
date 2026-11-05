@@ -17,18 +17,24 @@ n=$((n + 2))
 [ -f "$root/lakefile.lean" ] || bad "lakefile.lean is missing"
 if grep -qE '^[[:space:]]*require[[:space:]]' "$root/lakefile.lean"; then bad "lakefile.lean declares a dependency (require): none is allowed without a pinned lock"; fi
 n=$((n + 1))
+# the targets this check proves warning-fatal are EXACTLY the targets the lakefile declares: a new library or executable (or any other kind of target) that the check does not know fails here, so it cannot dodge the behaviour check below
+targets="VbmContext VbmContextProofs"
+declared=$(sed -nE 's/^(lean_lib|lean_exe)[[:space:]]+([^[:space:]]+).*/\2/p' "$root/lakefile.lean" | sed 's/«//g; s/»//g' | LC_ALL=C sort | tr '\n' ' ')
+want=$(printf '%s\n' $targets | LC_ALL=C sort | tr '\n' ' ')
+[ "$declared" = "$want" ] || bad "the lakefile declares the targets [${declared% }], but this check proves warnings fatal in exactly [${want% }]: extend scripts/check-toolchain.sh with the new target"
+if grep -qE '^[[:space:]]*(target|extern_lib|input_file|input_dir|module_facet|package_facet|library_facet|lean_lib_facet)[[:space:]]' "$root/lakefile.lean"; then bad "the lakefile declares a target of a kind this check cannot build in a scratch package (target, extern_lib, input_file, ...): extend scripts/check-toolchain.sh first"; fi
 t=$(mktemp -d "${TMPDIR:-/tmp}/check-toolchain.XXXXXX"); trap 'rm -rf "$t"' EXIT
 cp "$root/lakefile.lean" "$root/lean-toolchain" "$t/"; mkdir "$t/VbmContext" "$t/VbmContextProofs"
 echo "import VbmContext.Warn" > "$t/VbmContext.lean"; echo "import VbmContextProofs.Warn" > "$t/VbmContextProofs.lean"
 body() { if [ "$1" = warn ]; then printf 'def f (x : Nat) : Nat :=\n  let y := 1\n  2\n'; else printf 'def f (x : Nat) : Nat := x\n'; fi; }
 put() { body "$1" > "$t/VbmContext/Warn.lean"; body "$1" > "$t/VbmContextProofs/Warn.lean"; }
 # every build target of the lakefile (the library and the proofs) has its own options: each one is checked on its own
-for target in VbmContext VbmContextProofs; do
+for target in $targets; do
   put warn; rc=0; out=$(cd "$t" && lake build "$target" 2>&1) || rc=$?
   [ "$rc" != 0 ] || bad "a module with a warning BUILDS in the target $target under this lakefile: the zero-warning build is switched off for it"
   grep -q 'not explicitly referenced' <<<"$out" || bad "the module with a warning failed to build in the target $target (exit $rc), but not because of the warning, so the tool may never have run here: $(head -c 300 <<<"$out")"
   put clean; out=$(cd "$t" && lake build "$target" 2>&1) || bad "a clean module does not build in the target $target under this lakefile (the control): $(head -c 300 <<<"$out")"
   n=$((n + 2))
 done
-echo "check-toolchain: one Lean version ($ver) in lean-toolchain and mise.toml, no dependency, and every target of the lakefile fails a build on a warning: ok"
+echo "check-toolchain: one Lean version ($ver) in lean-toolchain and mise.toml, no dependency, and warnings are fatal in every target of the lakefile, proved by a build in each: $targets"
 echo "ran: toolchain: $n cases"

@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 gate=$(pwd)/scripts/check-toolchain.sh
 fail() { echo "test_check_toolchain: $*" >&2; exit 1; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-out=$("$gate" 2>&1) && grep -qx 'ran: toolchain: 7 cases' <<<"$out" && ran_case || fail "the real tree does not pass, or the gate printed no evidence: $out"
+out=$("$gate" 2>&1) && grep -qx 'ran: toolchain: 7 cases' <<<"$out" && grep -qF 'proved by a build in each: VbmContext VbmContextProofs' <<<"$out" && ran_case || fail "the real tree does not pass, or the gate printed no evidence: $out"
 fixture() { rm -rf "$T/f"; mkdir "$T/f"; cp lean-toolchain mise.toml lakefile.lean "$T/f/"; }
 neg() {  # neg NAME NEEDLE: the fixture tree in $T/f must FAIL with NEEDLE in what the gate says
   must_fail "$1" "$gate" "$T/f"; grep -qF -- "$2" <<<"$MUST_FAIL_ERR" && ran_case || fail "$1: the gate failed but did not say '$2': $MUST_FAIL_ERR"
@@ -28,6 +28,9 @@ open(p, "w").write(t.replace(anchor, anchor + "\n  leanOptions := #[⟨`warningA
 PY
   neg "warnings allowed in the target: $lib" "switched off for it"
 done
+fixture; printf 'lean_lib Extra where\n  leanOptions := #[⟨`warningAsError, false⟩]\n' >> "$T/f/lakefile.lean"; neg "a new library the check does not know" "proves warnings fatal in exactly"
+fixture; printf 'lean_exe «extra-tool» where\n  root := `Main\n' >> "$T/f/lakefile.lean"; neg "a new executable the check does not know" "proves warnings fatal in exactly"
+fixture; printf 'target foo pkg : Unit := pure (.pure ())\n' >> "$T/f/lakefile.lean"; neg "a target of a kind the check cannot build" "cannot build in a scratch package"
 # a lake that crashes, or that cannot fail, is not a pass (the tool must really run): stubs first on PATH
 mkdir "$T/bin"; fixture
 printf '#!/usr/bin/env bash\necho "segmentation fault" >&2; exit 139\n' > "$T/bin/lake"; chmod +x "$T/bin/lake"

@@ -39,6 +39,7 @@ done
 printf 'import VbmContext.State\n' > "$st"; [ -z "$(bad_imports "$st")" ] || { echo "tier1: the import scan flags an allowed import" >&2; exit 1; }
 echo "tier1: import scan: negative self-tests ok (each import outside Init and VbmContext is flagged)"
 
+scripts/lint-warning-options.sh   # no Lean source switches the zero-warning build off from inside (set_option, run_cmd, elab, ...): every .lean file is scanned, the targets are named, `ran: warning-options: N cases`
 scripts/lint-pipefail.sh   # a producer piped into an early-exiting consumer is flaky by construction; the lint has a negative self-test
 scripts/land/bin/land-check   # the vendored lander is the pinned copy (no local patch), offline
 
@@ -59,6 +60,7 @@ par scripts/test_lint_public.sh
 par scripts/test_ran_evidence.sh
 # 2f. The gate-change machinery (the lander's hooks, scripts/land.d/): the protected set, the diff judge of a gate-file change, the relabel-attack suite that judges the proposed gates (each attack is refused; with its gate stubbed the suite FAILS).
 par scripts/test_check_toolchain.sh
+par scripts/test_lint_warning_options.sh
 par scripts/test_protected_set.sh
 par scripts/test_gate_diff_improving.sh
 par scripts/test_relabel_attacks.sh

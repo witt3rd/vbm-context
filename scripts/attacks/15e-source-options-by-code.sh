@@ -1,0 +1,3 @@
+ATK_DESC="a proofs module that sets the option by running code at elaboration (run_cmd modifying the scope's options) before a warning: the source lint must refuse run_cmd"
+ATK_GATES=('scripts/tier1.sh'); ATK_GATE_FILES=(scripts/tier1.sh); ATK_LEAN=1; ATK_EXPECT='switch the zero-warning build off|run code'
+atk_apply() { printf 'import Lean\nopen Lean Elab Command\nrun_cmd modifyScope fun s => { s with opts := s.opts.setBool `warningAsError false }\ndef atkWarn (x : Nat) : Nat :=\n  let y := 1\n  2\n' > VbmContextProofs/AtkWarn.lean; echo 'import VbmContextProofs.AtkWarn' >> VbmContextProofs.lean; }

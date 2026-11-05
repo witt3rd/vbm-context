@@ -25,6 +25,8 @@ scripts/ran-gates.txt
 scripts/check-zero-warning.sh
 scripts/check-toolchain.sh
 scripts/test_check_toolchain.sh
+scripts/lint-warning-options.sh
+scripts/test_lint_warning_options.sh
 scripts/test_ran_evidence.sh
 scripts/run-tests-parallel.sh
 scripts/protected-paths.txt
