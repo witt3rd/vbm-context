@@ -13,11 +13,12 @@ structure Fact where
   pinned : Bool := false
   deriving DecidableEq
 
-/-- A "done when" clause of the task. -/
+/-- A "done when" clause of the task. `cites` are the keys of the facts it rests on. -/
 structure Obligation where
   id : Nat
   text : String
   met : Bool := false
+  cites : List String := []
   deriving DecidableEq
 
 structure State where
@@ -45,11 +46,19 @@ def State.apply (s : State) : Patch → State
 
 def State.applyAll (s : State) (ps : List Patch) : State := ps.foldl State.apply s
 
-/-- Compaction caps each unbounded list at `n`, newest first, and keeps the goal, the obligations and every pinned fact whole.
+/-- The pin rule: a fact is protected when it is pinned or an obligation that is not yet met cites its key. -/
+def protectedBy (os : List Obligation) (f : Fact) : Bool := f.pinned || os.any fun o => !o.met && o.cites.contains f.key
+
+/-- Keep every fact `p` protects, then at most `n` of the others (newest first). -/
+def capFacts (p : Fact → Bool) (n : Nat) (l : List Fact) : List Fact := l.filter p ++ (l.filter (!p ·)).take n
+
+/-- Compaction caps each unbounded list at `n`, newest first, and keeps the goal, the obligations and every protected fact whole.
 A projection, not a re-summary: that is what makes it idempotent. Total and deterministic by construction (a function). -/
 def compact (n : Nat) (s : State) : State :=
-  { s with plan := s.plan.take n, open_ := s.open_.take n, work := s.work.take n,
-           facts := s.facts.filter (·.pinned) ++ (s.facts.filter (!·.pinned)).take n }
+  { s with plan := s.plan.take n, open_ := s.open_.take n, work := s.work.take n, facts := capFacts (protectedBy s.obligations) n s.facts }
+
+/-- The invariant `addFact` and `compact` keep: one fact per key. -/
+def State.KeysDistinct (s : State) : Prop := (s.facts.map (·.key)).Nodup
 
 /-- The one-step machine: the model, an arbitrary function, sees the state and an observation and returns an action and patches. -/
 structure Model (Obs Act : Type) where

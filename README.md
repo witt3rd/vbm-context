@@ -18,8 +18,10 @@ The model never rewrites the state. It answers each step with an action and a li
 
 ## What it proves
 
-* **Nothing declared is ever lost.** After any list of patches and any compaction, the goal is unchanged, every obligation is still there with the same id and text, an obligation that was met stays met, and every pinned (protected) fact is still there and still pinned (`step_keeps`, for any model whatever it writes).
-* **Compaction is idempotent** (`compact_idem`) and **bounded**: each list holds at most `n` items, plus the pinned facts, which the caller chose to protect (`compact_size`).
+* **Nothing declared is ever lost.** After any list of patches and any compaction, the goal is unchanged, every obligation is still there with the same id and text, an obligation that was met stays met, and every pinned fact is still there and still pinned (`step_keeps`, for any model whatever it writes).
+* **The pin rule.** A fact is protected when it is pinned, or when an obligation that is not yet met cites its key; compaction never drops a protected fact (`compact_protected`, `compact_cited`), and once the obligation is met the fact is an ordinary one again.
+* **One fact per key.** `addFact` and compaction keep the keys distinct (`apply_keysDistinct`, `compact_keysDistinct`).
+* **Compaction is idempotent** (`compact_idem`) and **bounded**: each list holds at most `n` items, plus the protected facts, which the caller chose to protect (`compact_size`).
 * **The proofs are checked, not assumed:** no `sorry`, no added axiom (the axiom gate checks every constant), and every gate prints evidence that it ran at least one case.
 
 ## What it does not prove

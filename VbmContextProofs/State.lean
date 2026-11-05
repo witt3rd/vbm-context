@@ -45,7 +45,7 @@ theorem applyAll_keeps (ps : List Patch) : ∀ s : State, Keeps s (s.applyAll ps
 
 theorem compact_keeps (n : Nat) (s : State) : Keeps s (compact n s) :=
   ⟨rfl, fun o h => ⟨o, h, rfl, rfl, id⟩,
-   fun f h p => ⟨f, List.mem_append_left _ (List.mem_filter.2 ⟨h, p⟩), rfl, p⟩⟩
+   fun f h p => ⟨f, List.mem_append_left _ (List.mem_filter.2 ⟨h, by simp [protectedBy, p]⟩), rfl, p⟩⟩
 
 /-- Whatever the model writes and however it is compacted, the goal, every obligation and every pinned fact survive a step. -/
 theorem step_keeps {Obs Act : Type} (M : Model Obs Act) (n : Nat) (s : State) (o : Obs) : Keeps s (step M n s o).1 :=
@@ -54,22 +54,56 @@ theorem step_keeps {Obs Act : Type} (M : Model Obs Act) (n : Nat) (s : State) (o
 theorem compact_goal (n : Nat) (s : State) : (compact n s).goal = s.goal := rfl
 theorem compact_obligations (n : Nat) (s : State) : (compact n s).obligations = s.obligations := rfl
 
-theorem compact_idem (n : Nat) (s : State) : compact n (compact n s) = compact n s := by
-  have h1 : ((s.facts.filter (!·.pinned)).take n).filter (·.pinned) = [] :=
-    List.filter_eq_nil_iff.2 fun x hx => by simpa using (List.mem_filter.1 (List.mem_of_mem_take hx)).2
-  have h2 : (s.facts.filter (·.pinned)).filter (!·.pinned) = [] :=
-    List.filter_eq_nil_iff.2 fun x hx => by simpa using (List.mem_filter.1 hx).2
-  have h3 : ((s.facts.filter (!·.pinned)).take n).filter (!·.pinned) = (s.facts.filter (!·.pinned)).take n :=
-    List.filter_eq_self.2 fun x hx => by simpa using (List.mem_filter.1 (List.mem_of_mem_take hx)).2
-  have h4 : (s.facts.filter (·.pinned)).filter (·.pinned) = s.facts.filter (·.pinned) :=
-    List.filter_eq_self.2 fun x hx => by simpa using (List.mem_filter.1 hx).2
-  simp [compact, List.filter_append, h1, h2, h3, h4, List.take_take]
+/-- **The pin rule.** A protected fact (pinned, or cited by an obligation not yet met) is never dropped by compaction. -/
+theorem compact_protected (n : Nat) (s : State) (f : Fact) (h : f ∈ s.facts) (p : protectedBy s.obligations f = true) : f ∈ (compact n s).facts :=
+  List.mem_append_left _ (List.mem_filter.2 ⟨h, p⟩)
 
-/-- At most `n` of each list, plus the pinned facts (the only part the cap does not touch). -/
-theorem compact_size (n : Nat) (s : State) : (compact n s).size ≤ 4 * n + (s.facts.filter (·.pinned)).length := by
-  simp only [State.size, compact, List.length_append]
-  have := List.length_take_le n s.plan; have := List.length_take_le n (s.facts.filter (!·.pinned))
+/-- The fact an unmet obligation cites by key survives compaction. -/
+theorem compact_cited (n : Nat) (s : State) (o : Obligation) (ho : o ∈ s.obligations) (hm : o.met = false) (k : String) (hk : k ∈ o.cites)
+    (f : Fact) (hf : f ∈ s.facts) (hfk : f.key = k) : f ∈ (compact n s).facts :=
+  compact_protected n s f hf (by simp only [protectedBy, Bool.or_eq_true, List.any_eq_true]; exact Or.inr ⟨o, ho, by simp [hm, hk, hfk]⟩)
+
+/-- After the patches of a step, every protected fact of the patched state is in the new state. -/
+theorem step_protected {Obs Act : Type} (M : Model Obs Act) (n : Nat) (s : State) (o : Obs) (f : Fact)
+    (h : f ∈ (s.applyAll (M.decide s o).2).facts) (p : protectedBy (s.applyAll (M.decide s o).2).obligations f = true) : f ∈ (step M n s o).1.facts :=
+  compact_protected n _ f h p
+
+theorem capFacts_idem (P : Fact → Bool) (n : Nat) (l : List Fact) : capFacts P n (capFacts P n l) = capFacts P n l := by
+  have h1 : ((l.filter (!P ·)).take n).filter P = [] :=
+    List.filter_eq_nil_iff.2 fun x hx => by simpa using (List.mem_filter.1 (List.mem_of_mem_take hx)).2
+  have h2 : (l.filter P).filter (!P ·) = [] :=
+    List.filter_eq_nil_iff.2 fun x hx => by simpa using (List.mem_filter.1 hx).2
+  have h3 : ((l.filter (!P ·)).take n).filter (!P ·) = (l.filter (!P ·)).take n :=
+    List.filter_eq_self.2 fun x hx => by simpa using (List.mem_filter.1 (List.mem_of_mem_take hx)).2
+  have h4 : (l.filter P).filter P = l.filter P :=
+    List.filter_eq_self.2 fun x hx => by simpa using (List.mem_filter.1 hx).2
+  simp [capFacts, List.filter_append, h1, h2, h3, h4, List.take_take]
+
+theorem compact_idem (n : Nat) (s : State) : compact n (compact n s) = compact n s := by
+  simp [compact, capFacts_idem, List.take_take]
+
+/-- At most `n` of each list, plus the protected facts (the only part the cap does not touch). -/
+theorem compact_size (n : Nat) (s : State) : (compact n s).size ≤ 4 * n + (s.facts.filter (protectedBy s.obligations)).length := by
+  simp only [State.size, compact, capFacts, List.length_append]
+  have := List.length_take_le n s.plan; have := List.length_take_le n (s.facts.filter (!protectedBy s.obligations ·))
   have := List.length_take_le n s.open_; have := List.length_take_le n s.work
   omega
+
+/-! ### One fact per key -/
+
+theorem apply_keysDistinct (s : State) (p : Patch) (h : s.KeysDistinct) : (s.apply p).KeysDistinct := by
+  cases p with
+  | addFact f =>
+    simp only [State.KeysDistinct, State.apply, List.map_cons, List.nodup_cons, List.mem_map, List.mem_filter] at h ⊢
+    refine ⟨?_, ?_⟩
+    · rintro ⟨g, ⟨hg, hk⟩, hgk⟩; simp [hgk] at hk
+    · exact ((List.filter_sublist.map _).nodup h)
+  | meet _ | setPlan _ | ask _ | touch _ => exact h
+
+theorem compact_keysDistinct (n : Nat) (s : State) (h : s.KeysDistinct) : (compact n s).KeysDistinct := by
+  have hp : (s.facts.filter (protectedBy s.obligations) ++ s.facts.filter (!protectedBy s.obligations ·)).Perm s.facts := List.filter_append_perm _ _
+  have hs : (capFacts (protectedBy s.obligations) n s.facts).Sublist (s.facts.filter (protectedBy s.obligations) ++ s.facts.filter (!protectedBy s.obligations ·)) :=
+    (List.take_sublist _ _).append_left _
+  exact (hs.map (·.key)).nodup ((hp.map (·.key)).nodup_iff.2 (show (s.facts.map (·.key)).Nodup from h))
 
 end VbmContext
