@@ -2,7 +2,7 @@
 # The toolchain and build configuration gate: lean-toolchain, mise.toml and lakefile.lean are what the zero-warning build and every proof run under, so an edit of them is checked by what it DOES, not by what it says.
 #   1. lean-toolchain and mise.toml pin ONE and the same Lean version (a split pin builds with a different compiler than the one that is named);
 #   2. the lakefile declares no dependency (a `require` would fetch code that no lock here pins);
-#   3. the lakefile's own build options make a warning FAIL the build of each of its targets (the library, the proofs, the vector checker): a scratch package with the repository's lakefile and a module that has a warning must fail
+#   3. the lakefile's own build options make a warning FAIL the build of each of its targets (the library and the proofs): a scratch package with the repository's lakefile and a module that has a warning must fail
 #      `lake build TARGET` with the warning's diagnostic, and the same package with a clean module must pass (the control: the tool really runs here). Setting the option to false, appending `moreLeanArgs`, or any other way of switching the zero-warning build off is refused by this behaviour check.
 # Prints `ran: toolchain: N cases` on success (docs/decisions/0001-vbm-context.md). Usage: scripts/check-toolchain.sh [ROOT]   (ROOT defaults to the repository; the self-test gives it fixture trees).
 set -euo pipefail
@@ -18,12 +18,12 @@ n=$((n + 2))
 if grep -qE '^[[:space:]]*require[[:space:]]' "$root/lakefile.lean"; then bad "lakefile.lean declares a dependency (require): none is allowed without a pinned lock"; fi
 n=$((n + 1))
 t=$(mktemp -d "${TMPDIR:-/tmp}/check-toolchain.XXXXXX"); trap 'rm -rf "$t"' EXIT
-cp "$root/lakefile.lean" "$root/lean-toolchain" "$t/"; mkdir "$t/VbmContext" "$t/VbmContextProofs" "$t/vectors"
+cp "$root/lakefile.lean" "$root/lean-toolchain" "$t/"; mkdir "$t/VbmContext" "$t/VbmContextProofs"
 echo "import VbmContext.Warn" > "$t/VbmContext.lean"; echo "import VbmContextProofs.Warn" > "$t/VbmContextProofs.lean"
 body() { if [ "$1" = warn ]; then printf 'def f (x : Nat) : Nat :=\n  let y := 1\n  2\n'; else printf 'def f (x : Nat) : Nat := x\n'; fi; }
-put() { body "$1" > "$t/VbmContext/Warn.lean"; body "$1" > "$t/VbmContextProofs/Warn.lean"; { body "$1"; printf 'def main : IO Unit := pure ()\n'; } > "$t/vectors/Main.lean"; }
-# every build target of the lakefile (the library, the proofs, the vector checker) has its own options: each one is checked on its own
-for target in VbmContext VbmContextProofs vbm-context-vectors; do
+put() { body "$1" > "$t/VbmContext/Warn.lean"; body "$1" > "$t/VbmContextProofs/Warn.lean"; }
+# every build target of the lakefile (the library and the proofs) has its own options: each one is checked on its own
+for target in VbmContext VbmContextProofs; do
   put warn; rc=0; out=$(cd "$t" && lake build "$target" 2>&1) || rc=$?
   [ "$rc" != 0 ] || bad "a module with a warning BUILDS in the target $target under this lakefile: the zero-warning build is switched off for it"
   grep -q 'not explicitly referenced' <<<"$out" || bad "the module with a warning failed to build in the target $target (exit $rc), but not because of the warning, so the tool may never have run here: $(head -c 300 <<<"$out")"

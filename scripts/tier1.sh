@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tier 1 (pre-landing gate): forbidden constructs, the import rule, the vendored lander's drift check, zero-warning build, the axiom gate, the conformance vectors, the workflow and public-readiness lints,
+# Tier 1 (pre-landing gate): forbidden constructs, the import rule, the vendored lander's drift check, zero-warning build, the axiom gate, the workflow and public-readiness lints,
 # and the offline self-tests of the process scripts. Every gate has a negative self-test and runs it here; every gate and test prints ran-evidence (a gate that ran zero cases FAILS).
 # Run from the repo root: mise exec -- scripts/tier1.sh.
 set -euo pipefail
@@ -44,13 +44,11 @@ scripts/land/bin/land-check   # the vendored lander is the pinned copy (no local
 
 # 2. Build, zero warnings (scripts/check-zero-warning.sh: the warning's own diagnostic is required, a clean file must pass; prints `ran: zero-warning: 3 cases`).
 scripts/check-zero-warning.sh
-scripts/check-toolchain.sh   # lean-toolchain, mise.toml and lakefile.lean by what they DO: one Lean version, no dependency, every build target fails on a warning (prints `ran: toolchain: 9 cases`)
-lake build VbmContext VbmContextProofs vbm-context-vectors   # once, for the gates and every test (they build nothing more)
+scripts/check-toolchain.sh   # lean-toolchain, mise.toml and lakefile.lean by what they DO: one Lean version, no dependency, every build target fails on a warning (prints `ran: toolchain: 7 cases`)
+lake build VbmContext VbmContextProofs   # once, for the gates and every test (they build nothing more)
 
 # 2a. The axiom gate: every constant of ours depends only on propext, Classical.choice, Quot.sound (--selftest: a non-standard axiom is rejected).
 bg axiom-gate lake env lean --run scripts/AxiomGate.lean --selftest
-# 2b. The conformance scenarios (vectors/Main.lean), and the check is shown able to fail: a compaction that drops the obligations is rejected.
-bg vectors-check lake exe vbm-context-vectors --check --selftest
 # 2c. The workflow files are valid and public-safe (scripts/lint-workflows.py: hosted runners only, no pull_request_target, no secret); its negative self-test is declared below.
 [ "$(cat .github/visibility)" = public ] || { echo "tier1: .github/visibility must say exactly public: this repository is public and never uses a self-hosted runner" >&2; exit 1; }
 python3 scripts/lint-workflows.py

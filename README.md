@@ -29,11 +29,11 @@ The model never rewrites the state. It answers each step with an action and a li
 
 ## What it does not prove
 
-That a model does well with this state: task success is empirical and is never claimed here. That an obligation marked met really is met (that is the model's claim). The rendering of the state into a prompt, the redaction of secrets and a spend bound are planned and not built yet. The conformance scenarios in `vectors/` are regression evidence, not proof.
+That a model does well with this state: task success is empirical and is never claimed here. That an obligation marked met really is met (that is the model's claim). The rendering of the state into a prompt, the redaction of secrets and a spend bound are planned and not built yet.
 
 ## Build and test
 
-Prerequisites: `git`, [mise](https://mise.jdx.dev), `python3` with PyYAML. `mise exec -- scripts/tier1.sh` is the gate (Lean 4.35.0, pinned in `mise.toml`): forbidden-construct scan, import rule, zero-warning build, axiom gate, the conformance scenarios, the workflow and public-readiness lints, and the self-tests of the process scripts. Every gate has a negative self-test, and a gate that ran zero cases fails. CI runs the same script on GitHub-hosted runners only.
+Prerequisites: `git`, [mise](https://mise.jdx.dev), `python3` with PyYAML. `mise exec -- scripts/tier1.sh` is the gate (Lean 4.35.0, pinned in `mise.toml`): forbidden-construct scan, import rule, zero-warning build, axiom gate, the workflow and public-readiness lints, and the self-tests of the process scripts. Every gate has a negative self-test, and a gate that ran zero cases fails. CI runs the same script on GitHub-hosted runners only.
 
 ```lean
 import VbmContext
