@@ -15,6 +15,8 @@ Verified typed agent state, written once in Lean 4 and machine-checked: a typed 
 ## Status
 Slices: C1 `State`, `Patch`, `apply`, `compact`, `step` with the preservation, idempotence and size theorems (landed with the scaffold). Planned: a deterministic rendering with a stable prefix and `parse (render s) = s`; provenance validity and redaction; a per-step spend bound (prices a parameter). What has landed: `git log`. Toolchain: Lean 4.35.0 pinned in `mise.toml` and `lean-toolchain` (no elan). Run everything as `mise exec -- ...`; the gate is `mise exec -- scripts/tier1.sh`.
 
+**Follow-up (dated 2026-11-05):** put `VbmContext/` in the protected list (`scripts/protected-paths.txt`) once the library's theorem set stabilises.
+
 ## Hard rules
 - **Forbidden anywhere in Lean:** `sorry`, `admit`, `axiom`, `unsafe`, `implemented_by`, `csimp` (Tier 1 scans for them; a comment may mention one only on a line marked `tier1-allow`). A proof is hard? Decompose it; never weaken the statement.
 - **Spec first.** Behaviour lands as a specification and its proofs. The conformance scenarios (`vectors/`) are regression evidence, never proof. No unproved claim called verified.
