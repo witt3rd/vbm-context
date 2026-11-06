@@ -1,0 +1,1 @@
+lakefile.lean | bb0e1a55ea9f91fd3d57e49d8fba789fd02dda25a29b0843f883c7383c5f2d28 | the vectors gate checks the authors own reading with no outside oracle; to be reinstated as a compiled-versus-kernel differential in the same slice that first ships the compiled path to a consumer | 2026-11-06
