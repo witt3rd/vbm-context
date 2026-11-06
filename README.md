@@ -33,7 +33,7 @@ That a model does well with this state: task success is empirical and is never c
 
 ## Build and test
 
-Prerequisites: `git`, [mise](https://mise.jdx.dev), `python3` with PyYAML. `mise exec -- scripts/tier1.sh` is the gate (Lean 4.35.0, pinned in `mise.toml`): forbidden-construct scan, import rule, zero-warning build, axiom gate, the workflow and public-readiness lints, and the self-tests of the process scripts. Every gate has a negative self-test, and a gate that ran zero cases fails. CI runs the same script on GitHub-hosted runners only.
+Prerequisites: `git`, [mise](https://mise.jdx.dev), `python3` with PyYAML. `mise exec -- scripts/tier1.sh` is the gate (Lean 4.35.0, pinned in `mise.toml`): forbidden-construct scan, import rule, pipefail lint, the vendored lander's drift check, zero-warning build, axiom gate, the public-readiness lint, and the self-tests of the process scripts. Every gate has a negative self-test, and a gate that ran zero cases fails. CI runs the same script on GitHub-hosted runners only.
 
 ```lean
 import VbmContext
