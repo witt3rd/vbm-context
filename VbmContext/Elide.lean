@@ -68,8 +68,7 @@ structure Ctx where
 
 /-- Elide, and count a break exactly when the context changed (one bump however many blocks were elided). -/
 def Ctx.elide (c : Ctx) : Ctx :=
-  let l := VbmContext.elide c.blocks
-  if l = c.blocks then c else ⟨l, c.epoch + 1⟩
+  if VbmContext.elide c.blocks = c.blocks then c else ⟨VbmContext.elide c.blocks, c.epoch + 1⟩
 
 /-- Admit a new block at the end: an append is not a break (the earlier bytes are as they were). -/
 def Ctx.push (c : Ctx) (b : Block) : Ctx := ⟨c.blocks ++ [b], c.epoch⟩

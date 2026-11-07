@@ -3,3 +3,4 @@ import VbmContextProofs.Prompt
 import VbmContextProofs.Tail
 import VbmContextProofs.Request
 import VbmContextProofs.Excerpt
+import VbmContextProofs.Elide
