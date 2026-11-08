@@ -20,7 +20,7 @@ Slices: C1 `State`, `Patch`, `apply`, `compact`, `step` with the preservation, i
 - **Forbidden anywhere in Lean:** `sorry`, `admit`, `axiom`, `unsafe`, `implemented_by`, `csimp` (Tier 1 scans for them; a comment may mention one only on a line marked `tier1-allow`). A proof is hard? Decompose it; never weaken the statement.
 - **Spec first.** Behaviour lands as a specification and its proofs. There is no vectors gate (removed: its reference was the author's own reading; to be REINSTATED as a compiled-versus-kernel differential in the slice that first ships the compiled path to a consumer, see `docs/decisions/0001-vbm-context.md`). No unproved claim called verified.
 - **Ran-evidence.** A gate or test that runs zero cases fails: every test script ends with `ran: NAME: N cases` (N > 0) and every concurrent gate reports its own count (`scripts/ran-gates.txt`). A refused tool, a `SKIPPED` line or an early exit is never a pass. Every gate has a negative self-test that must be shown able to fail in the same run.
-- **Hosted CI only, never self-hosted.** The repository is public: no `self-hosted` runner, no `pull_request_target`, no secret (`scripts/lint-workflows.py`, `.github/visibility` = `public`). Never register a runner for this repository.
+- **Hosted CI only, never self-hosted.** The repository is public: no `self-hosted` runner, no `pull_request_target`, no secret (Tier 1 fails unless `.github/visibility` says exactly `public`). Never register a runner for this repository.
 - **Public-ready, always.** No private name, no path of ours, no number of ours, no e-mail anywhere; write generic ("a verified agent harness"). Names are kept as hashes (`scripts/public-banned-hashes.txt`).
 - **Small diffs** and Conventional Commits; TTL 45 minutes without a passing build: abort and decompose.
 - **Land with `scripts/land-direct`**, never a PR, never push or force-push `main`. Any file of the repository, spec and scripts and docs and this file included, lands like any change when Tier 1 passes; no approval is needed. Only the lander's own files (`scripts/land/`) and the signing keys are read-only.
@@ -34,4 +34,4 @@ Slices: C1 `State`, `Patch`, `apply`, `compact`, `step` with the preservation, i
 **Tier 1** (`scripts/tier1.sh`): forbidden-constructs scan, import scan, pipefail lint, the vendored lander's drift check, zero-warning build, axiom gate, public-readiness lint, ran-evidence self-tests. **Tier 2** (CI, on a schedule): Tier 1 again plus the lander's upstream check.
 
 ## Layout
-`VbmContext/` spec and code · `VbmContextProofs/` proofs (never linked) · `docs/decisions/` design · `scripts/` gates, lints and their self-tests, `scripts/land.d/` the lander's hooks, `scripts/attacks/` the relabel attacks, the pinned lander.
+`VbmContext/` spec and code · `VbmContextProofs/` proofs (never linked) · `docs/decisions/` design · `scripts/` gates, lints and their self-tests, `scripts/land.d/` the lander's hooks, the pinned lander.
