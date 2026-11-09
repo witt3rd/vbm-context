@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tier 1 (pre-landing gate): forbidden constructs, the import rule, the vendored lander's drift check, zero-warning build, the axiom gate, the workflow and public-readiness lints,
+# Tier 1 (pre-landing gate): forbidden constructs, the import rule, the vendored lander's drift check, zero-warning build, the axiom gate, the public-readiness lint,
 # and the offline self-tests of the process scripts. Every gate has a negative self-test and runs it here; every gate and test prints ran-evidence (a gate that ran zero cases FAILS).
 # Run from the repo root: mise exec -- scripts/tier1.sh.
 set -euo pipefail
@@ -48,7 +48,6 @@ lake build VbmContext VbmContextProofs   # once, for the gates and every test (t
 
 # 2a. The axiom gate: every constant of ours depends only on propext, Classical.choice, Quot.sound (--selftest: a non-standard axiom is rejected).
 bg axiom-gate lake env lean --run scripts/AxiomGate.lean --selftest
-[ "$(cat .github/visibility)" = public ] || { echo "tier1: .github/visibility must say exactly public: this repository is public and never uses a self-hosted runner" >&2; exit 1; }
 # 2d. The public-readiness lint: no private name, no path of ours, anywhere in the tree; it is shown able to fail.
 par scripts/test_lint_public.sh
 # 2e. The ran-evidence mechanism: the shared negative test (a refused, missing, skipped, silent or zero-count check FAILS).

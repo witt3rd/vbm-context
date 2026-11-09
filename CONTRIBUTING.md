@@ -8,7 +8,7 @@ vbm-context is built by agents under mechanical gates, and it lands directly on 
 - No `sorry`, `admit`, `axiom`, `unsafe`, `implemented_by` or `csimp` in Lean; `VbmContext/` imports `Init` and itself only. A proof is hard? Decompose it; never weaken the statement.
 - Every gate has a negative self-test and prints ran-evidence (`ran: NAME: N cases`, N > 0); a gate that ran nothing fails.
 - Small diffs: at most 150 production lines under `VbmContext/` per change. Conventional Commits (`type(scope): summary`).
-- No private name, no personal path, no secret, no network call from a test. CI runs on GitHub-hosted runners only: a workflow that names a self-hosted runner, `pull_request_target` or a secret fails the lint.
+- No private name, no personal path, no secret, no network call from a test. Nothing runs after the push: there is no workflow and no runner in this repository.
 - `scripts/land/` is a pinned copy of vbm-land: never edit it.
 
 By contributing you agree your contribution is licensed under Apache-2.0.

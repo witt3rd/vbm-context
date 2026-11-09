@@ -7,7 +7,7 @@ vbm-context is a **pre-release** library. Nothing is published to a package regi
 - A hole in the proofs: a way to make a theorem claim more than it says (a forbidden construct that evades the gates, an axiom, a theorem about code that does not run).
 - A patch sequence or compaction that drops the goal, an obligation or a pinned fact, or a state that exceeds the stated size bound.
 - A crash, hang or unbounded memory use on any input.
-- Anything in the CI workflows that would expose a secret or run untrusted code with privileges.
+- A way to land a change without passing Tier 1, or any secret, credential or key committed to the repository.
 
 The library is pure data and functions: it does not talk to a network, hold a credential or call a model, so no key or token belongs in this repository, its tests or its logs.
 
