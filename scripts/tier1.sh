@@ -40,7 +40,7 @@ printf 'import VbmContext.State\n' > "$st"; [ -z "$(bad_imports "$st")" ] || { e
 echo "tier1: import scan: negative self-tests ok (each import outside Init and VbmContext is flagged)"
 
 scripts/lint-pipefail.sh   # a producer piped into an early-exiting consumer is flaky by construction; the lint has a negative self-test
-scripts/land/bin/land-check   # the vendored lander is the pinned copy (no local patch), offline
+.land/tool/bin/land-check   # the vendored lander is the pinned copy (no local patch), offline
 
 # 2. Build, zero warnings (scripts/check-zero-warning.sh: the warning's own diagnostic is required, a clean file must pass; prints `ran: zero-warning: 3 cases`).
 scripts/check-zero-warning.sh

@@ -48,7 +48,7 @@ The proofs are in `VbmContextProofs/State.lean`; the design is in `docs/decision
 
 ## How it is built
 
-Agents write it under mechanical gates instead of line-by-line review. The standard is VBM (verified bare metal), see [the VBM standard](https://github.com/witt3rd/vbm). It lands directly on `main` with `scripts/land-direct`, a pinned copy of [vbm-land](https://github.com/witt3rd/vbm-land).
+Agents write it under mechanical gates instead of line-by-line review. The standard is VBM (verified bare metal), see [the VBM standard](https://github.com/witt3rd/vbm). It lands directly on `main` with `.land/land-direct`, a pinned copy of [vbm-land](https://github.com/witt3rd/vbm-land).
 
 ## License
 
