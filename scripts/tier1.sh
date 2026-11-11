@@ -4,12 +4,10 @@
 # Run from the repo root: mise exec -- scripts/tier1.sh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-# RAN-EVIDENCE (docs/decisions/0001-vbm-context.md): every test script and every concurrent gate ends with `ran: NAME: N cases` (N > 0, or the gate's own count line named in scripts/ran-gates.txt);
-# scripts/run-tests-parallel.sh and the check below FAIL a job without it, and a refused tool, a SKIPPED check or a stop by a guard is a failure, never a pass.
-# A sourced library that was replaced by a stub (`exit 0`) would end this script with success: each is checked to define its function first.
-[ "$(grep -c '^ran_done()' scripts/lib-ran.sh)" = 1 ] || { echo "tier1: scripts/lib-ran.sh does not define ran_done" >&2; exit 1; }
-[ "$(grep -c '^must_fail()' scripts/lib-ran.sh)" = 1 ] || { echo "tier1: scripts/lib-ran.sh does not define must_fail" >&2; exit 1; }
-[ "$(grep -c '^  check-dir)' scripts/ran-evidence.sh)" = 1 ] || { echo "tier1: scripts/ran-evidence.sh does not define check-dir" >&2; exit 1; }
+# RAN-EVIDENCE (.land/tool/docs/ran-evidence.md): every test script and every concurrent gate ends with `ran: NAME: N cases` (N > 0, or the gate's own count line named in scripts/ran-gates.txt);
+# .land/tool/bin/run-tests-parallel and the check below FAIL a job without it, and a refused tool, a SKIPPED check or a stop by a guard is a failure, never a pass. The tools are the vendored ones: land-check refuses an edited copy.
+# The vendored libraries are exactly their pins (vbm-land docs/pin.md): the same first step in every repository (this one vendors none today).
+.land/tool/bin/land-pin verify
 
 tests=(); par() { tests+=("$@"); }   # independent test scripts, run in parallel at the end; every scripts/test_*.sh must be declared
 bgdir=$(mktemp -d); bgnames=()
@@ -50,13 +48,16 @@ lake build VbmContext VbmContextProofs   # once, for the gates and every test (t
 bg axiom-gate lake env lean --run scripts/AxiomGate.lean --selftest
 # 2d. The public-readiness lint: no private name, no path of ours, anywhere in the tree; it is shown able to fail.
 par scripts/test_lint_public.sh
-# 2e. The ran-evidence mechanism: the shared negative test (a refused, missing, skipped, silent or zero-count check FAILS).
-par scripts/test_ran_evidence.sh
-par scripts/test_run_parallel.sh
+# 2e. The test-running runtime (ran-evidence, the parallel runner) is the vendored tool's and is tested in vbm-land. Every concurrent gate must say how its count is read: a `bg NAME` of this script has a line in
+# scripts/ran-gates.txt, or prints its own `ran: NAME: N cases` (the tests job does).
+for g in $(sed -nE 's/^bg ([A-Za-z0-9_-]+) .*/\1/p' scripts/tier1.sh); do
+  [ "$g" = tests ] && continue
+  grep -qE "^$g " scripts/ran-gates.txt || { echo "tier1: the concurrent gate $g has no line in scripts/ran-gates.txt: its count is not required" >&2; exit 1; }
+done
 
 for f in scripts/test_*.sh; do case " ${tests[*]} " in *" $f "*) ;; *) echo "tier1: $f is not declared with par" >&2; exit 1;; esac; done
 echo "tier1: ${#tests[@]} test scripts: ${tests[*]}"
-bg tests scripts/run-tests-parallel.sh "${tests[@]}"
+bg tests .land/tool/bin/run-tests-parallel "${tests[@]}"
 bgwait
-scripts/ran-evidence.sh check-dir "$bgdir" scripts/ran-gates.txt   # every concurrent gate and the tests job ran something
+.land/tool/bin/ran-evidence check-dir "$bgdir" scripts/ran-gates.txt   # every concurrent gate and the tests job ran something
 echo "tier1: ok"
