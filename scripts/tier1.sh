@@ -45,7 +45,7 @@ scripts/check-zero-warning.sh
 lake build VbmContext VbmContextProofs   # once, for the gates and every test (they build nothing more)
 
 # 2a. The axiom gate: every constant of ours depends only on propext, Classical.choice, Quot.sound (--selftest: a non-standard axiom is rejected).
-bg axiom-gate lake env lean --run scripts/AxiomGate.lean --selftest
+bg axiom-gate .land/tool/bin/land-lean axiom --selftest
 # 2d. The public-readiness lint: no private name, no path of ours, anywhere in the tree; it is shown able to fail.
 par scripts/test_lint_public.sh
 # 2e. The test-running runtime (ran-evidence, the parallel runner) is the vendored tool's and is tested in vbm-land. Every concurrent gate must say how its count is read: a `bg NAME` of this script has a line in
